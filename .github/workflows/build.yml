@@ -1,0 +1,37 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          restore-keys: buildozer-${{ runner.os }}-
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip libffi-dev libssl-dev autoconf automake libtool pkg-config zlib1g-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install buildozer cython==0.29.36
+      - name: Build debug APK
+        run: buildozer -v android debug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-workout-apk
+          path: bin/*.apk
+          if-no-files-found: error
