@@ -22,7 +22,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libffi-dev libssl-dev ccache libltdl-dev
-        pip install --upgrade buildozer cython
+        # Fix Cython version compatibility for python-for-android
+        pip install --upgrade "cython<3.0.0" buildozer
+
+    - name: Auto-Accept Android SDK Licenses in buildozer.spec
+      run: |
+        if grep -q "android.accept_sdk_licenses" buildozer.spec; then
+          sed -i 's/#\? \?android.accept_sdk_licenses =.*/android.accept_sdk_licenses = True/' buildozer.spec
+        else
+          echo "android.accept_sdk_licenses = True" >> buildozer.spec
+        fi
 
     - name: Download & Extract Vosk Arabic Model
       run: |
@@ -35,7 +44,6 @@ jobs:
 
     - name: Build APK with Buildozer
       run: |
-        # Accept Android SDK licenses automatically
         yes | buildozer android debug
 
     - name: Upload APK Artifact
